@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Dashboard Meteorológico con Historial</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f0f4f8;
+      margin: 0;
+      padding: 20px;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    h1 {
+      color: #0d47a1;
+      margin-bottom: 20px;
+    }
+    .dashboard {
+      background: white;
+      border-radius: 10px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      max-width: 700px;
+      width: 100%;
+      padding: 30px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+    .card {
+      background: #e3f2fd;
+      border-radius: 8px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: inset 0 0 10px #bbdefb;
+      transition: background 0.3s ease;
+    }
+    .card:hover {
+      background: #bbdefb;
+    }
+    .card h2 {
+      margin: 0 0 10px;
+      font-size: 1.2rem;
+      color: #0d47a1;
+    }
+    .value {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #0d47a1;
+    }
+    .unit {
+      font-size: 1.2rem;
+      color: #0d47a1;
+      margin-left: 4px;
+    }
+    .description {
+      margin-top: 8px;
+      font-size: 0.9rem;
+      color: #555;
+    }
+    /* Tabla historial */
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 700px;
+      background: white;
+      border-radius: 10px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    th, td {
+      padding: 12px 15px;
+      text-align: center;
+      border-bottom: 1px solid #ddd;
+      font-size: 0.9rem;
+    }
+    th {
+      background-color: #0d47a1;
+      color: white;
+      position: sticky;
+      top: 0;
+      z-index: 1;
+    }
+    tbody tr:hover {
+      background-color: #f1f7ff;
+    }
+    caption {
+      caption-side: top;
+      font-weight: bold;
+      font-size: 1.2rem;
+      margin-bottom: 10px;
+      color: #0d47a1;
+    }
+    /* Scroll para tabla en pantallas pequeñas */
+    .table-container {
+      width: 100%;
+      max-width: 700px;
+      overflow-x: auto;
+      margin-bottom: 40px;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Dashboard Meteorológico con Historial</h1>
+
+  <div class="dashboard" aria-live="polite" aria-atomic="true">
+    <div class="card" id="temp-card">
+      <h2>Temperatura</h2>
+      <div class="value" id="temperature">--</div>
+      <div class="unit">°C</div>
+      <div class="description">Temperatura actual</div>
+    </div>
+
+    <div class="card" id="humidity-card">
+      <h2>Humedad</h2>
+      <div class="value" id="humidity">--</div>
+      <div class="unit">%</div>
+      <div class="description">Humedad relativa</div>
+    </div>
+
+    <div class="card" id="wind-dir-card">
+      <h2>Dirección del Viento</h2>
+      <div class="value" id="windDirection">--</div>
+      <div class="description">Dirección actual</div>
+    </div>
+
+    <div class="card" id="wind-speed-card">
+      <h2>Velocidad del Viento</h2>
+      <div class="value" id="windSpeed">--</div>
+      <div class="unit">km/h</div>
+      <div class="description">Velocidad actual</div>
+    </div>
+  </div>
+
+  <div class="table-container" role="region" aria-label="Historial de datos meteorológicos">
+    <table>
+      <caption>Historial de datos (últimas 10 actualizaciones)</caption>
+      <thead>
+        <tr>
+          <th>Fecha y Hora</th>
+          <th>Temperatura (°C)</th>
+          <th>Humedad (%)</th>
+          <th>Dirección Viento</th>
+          <th>Velocidad Viento (km/h)</th>
+        </tr>
+      </thead>
+      <tbody id="history-body">
+        <!-- Filas de historial aquí -->
+      </tbody>
+    </table>
+  </div>
+
+  <script>
+    // Variables para almacenar historial
+    const maxHistorial = 10;
+    const historial = [];
+
+    // Función para generar datos simulados
+    function generarDatos() {
+      const windDirections = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+      return {
+        temperature: (15 + Math.random() * 15).toFixed(1), // 15 a 30 °C
+        humidity: Math.floor(30 + Math.random() * 60), // 30 a 90 %
+        windDirection: windDirections[Math.floor(Math.random() * windDirections.length)],
+        windSpeed: (Math.random() * 30).toFixed(1) // 0 a 30 km/h
+      };
+    }
+
+    // Función para actualizar la interfaz con datos nuevos
+    function actualizarDatos() {
+      const datos = generarDatos();
+      const ahora = new Date();
+
+      // Actualizar valores en tarjetas
+      document.getElementById('temperature').textContent = datos.temperature;
+      document.getElementById('humidity').textContent = datos.humidity;
+      document.getElementById('windDirection').textContent = datos.windDirection;
+      document.getElementById('windSpeed').textContent = datos.windSpeed;
+
+      // Guardar en historial
+      historial.unshift({
+        timestamp: ahora,
+        ...datos
+      });
+
+      // Limitar historial a maxHistorial
+      if (historial.length > maxHistorial) {
+        historial.pop();
+      }
+
+      // Actualizar tabla historial
+      actualizarTablaHistorial();
+    }
+
+    // Función para formatear fecha y hora
+    function formatearFecha(fecha) {
+      return fecha.toLocaleString('es-ES', {
+        year: 'numeric',
+        month: '2-digit',
+        day: '2-digit',
+        hour: '2-digit',
+        minute: '2-digit',
+        second: '2-digit'
+      });
+    }
+
+    // Función para actualizar la tabla del historial
+    function actualizarTablaHistorial() {
+      const tbody = document.getElementById('history-body');
+      tbody.innerHTML = ''; // Limpiar tabla
+
+      historial.forEach(item => {
+        const tr = document.createElement('tr');
+
+        tr.innerHTML = `
+          <td>${formatearFecha(item.timestamp)}</td>
+          <td>${item.temperature}</td>
+          <td>${item.humidity}</td>
+          <td>${item.windDirection}</td>
+          <td>${item.windSpeed}</td>
+        `;
+
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Actualizar datos al cargar la página
+    actualizarDatos();
+
+    // Actualizar datos cada 10 segundos
+    setInterval(actualizarDatos, 10000);
+  </script>
+
+</body>
+</html>
